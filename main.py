@@ -3,17 +3,33 @@ import time
 import json
 import asyncio
 import requests
+import threading
 
 with open("data.json", "r") as handler:
-    data = json.loads(handler)
+    data = json.loads(handler.read())
+
+def cooldown(function, duration = 30):
+    function.on_cooldown = False
+    def sleeper():
+        function.on_cooldown = True
+        time.sleep(duration)
+        function.on_cooldown = False
+    async def wrapper(*args, **kwargs):
+        if function.on_cooldown:
+            print(f"Function {function.__name__} on cooldown")
+        else:
+            timer = threading.Thread(target=sleeper)
+            await function(*args, **kwargs)
+            timer.start()
+    return wrapper
 
 class Bot(commands.Bot):
     def __init__(self):
         super().__init__(irc_token=data["OAUTH_TOKEN"], 
-            client_id=data.["CLIENT_ID"], 
-            nick=data.["BOT_NICK"], 
-            prefix=data.["BOT_PREFIX"], 
-            initial_channels=data.["CHANNELS"])
+            client_id=data["CLIENT_ID"], 
+            nick=data["BOT_NICK"], 
+            prefix=data["BOT_PREFIX"], 
+            initial_channels=data["CHANNELS"])
 
     async def event_ready(self):
         print(f'Bot ready | {self.nick}')
@@ -27,10 +43,12 @@ class Bot(commands.Bot):
             await data.channel.send(f"{data.user.name} has extended their sub-streak by one month. It's now at {data.streak_months} months!")
 
     @commands.command(name="test")
+    @cooldown
     async def test(self, context):
         await context.send(f'Hello {context.author.name}')
 
     @commands.command(name="info")
+    @cooldown
     async def info(self, context):
         await context.send("Following authentication problems this command is currently unavailable")
         #channel = bot.get_channel(data.CHANNELS[0])
@@ -41,12 +59,13 @@ class Bot(commands.Bot):
         #        await ctx.send(f'{key} : {value}')
 
     @commands.command(name="so")
+    @cooldown
     async def shoutout(self, context):
         await context.send(f"{context.content}")
         message = context.content
         if len(message) > 4:
             target = message[3:]
-            await context.send(f"{target}")
+            await context.send(f"Shoutout to {target}, who you might be able to find at https://twitch.tv/{target}!")
 
 
 def check_user(name):
