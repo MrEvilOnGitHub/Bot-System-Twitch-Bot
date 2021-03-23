@@ -4,11 +4,20 @@ import json
 import asyncio
 import requests
 import threading
+import types
 
-with open("data.json", "r") as handler:
-    data = json.loads(handler.read())
+# import the data.py file storing all the tokens and other neccessary info
+import data
 
-def cooldown(function, duration = 30):
+def cooldown(function, duration = int(30)) -> types.FunctionType:
+    """
+    Decorator for command functions.
+    It adds a cooldown feature to the command decorated 
+    which prevents it from being executed before a specified time has passed.
+    The cooldown is implemented by launching a seperate thread with a sleep call 
+    after the command is executed while not on cooldown, 
+    which is stored in an internal variable of the command function
+    """
     function.on_cooldown = False
     def sleeper():
         function.on_cooldown = True
@@ -25,17 +34,18 @@ def cooldown(function, duration = 30):
 
 class Bot(commands.Bot):
     def __init__(self):
-        super().__init__(irc_token=data["OAUTH_TOKEN"], 
-            client_id=data["CLIENT_ID"], 
-            nick=data["BOT_NICK"], 
-            prefix=data["BOT_PREFIX"], 
-            initial_channels=data["CHANNELS"])
+        super().__init__(irc_token=data.OAUTH_TOKEN, 
+            client_id=data.CLIENT_ID, 
+            nick=data.BOT_NICK, 
+            prefix=data.BOT_PREFIX, 
+            initial_channels=data.CHANNELS)
 
     async def event_ready(self):
         print(f'Bot ready | {self.nick}')
 
     async def event_message(self, message):
         # remove messages with blacklisted words first, then execute the command if it isn't removed
+        # ^ yet to be implemented
         await self.handle_commands(message)
 
     async def event_usernotice_subscription(self, data):
@@ -70,10 +80,11 @@ class Bot(commands.Bot):
 
 def check_user(name):
     # Example from twitch docs on how to get user info using userid
-    a = """curl -X GET 'https://api.twitch.tv/helix/users?id=141981764' 
-           -H 'Authorization: Bearer cfabdegwdoklmawdzdo98xt2fo512y' 
-           -H 'Client-Id: uo6dggojyb8d6soh92zknwmi5ej1q2'
-"""
+    """
+    curl -X GET 'https://api.twitch.tv/helix/users?id=141981764' 
+    -H 'Authorization: Bearer cfabdegwdoklmawdzdo98xt2fo512y' 
+    -H 'Client-Id: uo6dggojyb8d6soh92zknwmi5ej1q2'
+    """
     headers = {
         'Authorization' : data.OAUTH_TOKEN,
         'Client-Id' : data.CLIENT_ID

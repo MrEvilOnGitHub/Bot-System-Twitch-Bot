@@ -1,0 +1,5 @@
+OAUTH_TOKEN = 'OAuth token, aquired from Twitch'
+CLIENT_ID = 'Client ID, aquired from Twitch'
+BOT_NICK = 'Bot name'
+BOT_PREFIX = 'Prefix'
+CHANNELS = ['Channels']

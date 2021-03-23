@@ -1,8 +1,0 @@
-{
-    "OAUTH_TOKEN": "OAuth token",
-    "OAUTH_SHORT": "OAuth token minus the oauth:",
-    "CLIENT_ID" : "client id from discord app",
-    "BOT_NICK" : "bot name",
-    "BOT_PREFIX" : "!",
-    "CHANNELS" : ["channel name"]
-}
