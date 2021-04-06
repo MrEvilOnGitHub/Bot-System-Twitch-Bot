@@ -11,12 +11,12 @@ import data
 
 def cooldown(function, duration = int(30)) -> types.FunctionType:
     """
-    Decorator for command functions.
-    It adds a cooldown feature to the command decorated 
-    which prevents it from being executed before a specified time has passed.
-    The cooldown is implemented by launching a seperate thread with a sleep call 
-    after the command is executed while not on cooldown, 
-    which is stored in an internal variable of the command function
+    Cooldown decorator for command functions
+
+    Optional argument: duration = integer
+
+    How it works: Launches a timing thread utilizing sleep when the command is called.
+    And until that thread finishes the internal on_cooldown variable will prevent another call of the function
     """
     function.on_cooldown = False
     def sleeper():
@@ -32,13 +32,23 @@ def cooldown(function, duration = int(30)) -> types.FunctionType:
             timer.start()
     return wrapper
 
+def receiveBannedWordList():
+    request = requests.get("http://localhost:5000/api/alpha/get/bannedWords")
+    data = request.json()
+    returner = set(data)
+    return returner
+
 class Bot(commands.Bot):
+
+    bannedWords = set
+
     def __init__(self):
-        super().__init__(irc_token=data.OAUTH_TOKEN, 
-            client_id=data.CLIENT_ID, 
-            nick=data.BOT_NICK, 
-            prefix=data.BOT_PREFIX, 
+        super().__init__(irc_token=data.OAUTH_TOKEN,
+            client_id=data.CLIENT_ID,
+            nick=data.BOT_NICK,
+            prefix=data.BOT_PREFIX,
             initial_channels=data.CHANNELS)
+        self.bannedWords = receiveBannedWordList()
 
     async def event_ready(self):
         print(f'Bot ready | {self.nick}')
@@ -77,12 +87,26 @@ class Bot(commands.Bot):
             target = message[3:]
             await context.send(f"Shoutout to {target}, who you might be able to find at https://twitch.tv/{target}!")
 
+    @commands.command(name="Discord")
+    @cooldown
+    async def discord(self, context):
+        await context.send("It seems that you are interested in our Discord server. You can join over here: discord.gg/3a4ZseU")
+
+    @commands.command(name="DestinyJoin")
+    @cooldown
+    async def destinyJoin(self, context):
+        await context.send("If you want to join me with your guardian (and my fireteam settings are on public), you can use this joincode: 76561198078422715")
+
+    @commands.command(name="TownOfSalem")
+    @cooldown
+    async def townOfSalem(self, context):
+        await context.send("Add me on Town of Salem: MrEvilInSalem")        
 
 def check_user(name):
     # Example from twitch docs on how to get user info using userid
     """
-    curl -X GET 'https://api.twitch.tv/helix/users?id=141981764' 
-    -H 'Authorization: Bearer cfabdegwdoklmawdzdo98xt2fo512y' 
+    curl -X GET 'https://api.twitch.tv/helix/users?id=141981764'
+    -H 'Authorization: Bearer cfabdegwdoklmawdzdo98xt2fo512y'
     -H 'Client-Id: uo6dggojyb8d6soh92zknwmi5ej1q2'
     """
     headers = {
