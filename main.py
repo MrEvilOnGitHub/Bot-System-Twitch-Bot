@@ -43,6 +43,22 @@ def receiveBannedWordList():
     returner = set(data)
     return returner
 
+def iterateThroughDict(dictionary, funtionToExecute):
+    for key in dictionary:
+        if type(dictionary[key]) is dict:
+            iterateThroughDict(dictionary[key], funtionToExecute)
+        else:
+            funtionToExecute((key, dictionary[key]))
+
+async def asyncIterateThroughDict(dictionary, asyncFunction, *, functionIsAsync=True):
+    for key in dictionary:
+        if type(dictionary[key]) is dict:
+            await asyncIterateThroughDict(dictionary[key], asyncFunction, functionIsAsync=functionIsAsync)
+        else:
+            if functionIsAsync:
+                await asyncFunction((key, dictionary[key]))
+            else:
+                asyncFunction((key, dictionary))
 class Bot(commands.Bot):
 
     bannedWords = set()
@@ -83,59 +99,53 @@ class Bot(commands.Bot):
             await data.channel.send(f'{data.user.name} has just subscribed on tier {apiData["tier"]}')
 
     @commands.command(name="test")
-    @cooldown
+    #@cooldown
     async def test(self, context):
         await context.send(f'Hello {context.author.name}')
 
     @commands.command(name="info")
-    @cooldown
+    #@cooldown
     async def info(self, context):
-        stream = authData.getStreamInfo()
-        print(stream)
+        """
+        Grabs the publicly available information of the stream chat is has been called from and prints it to console output
+        """
+        #stream = authData.getStreamInfo()
+        #print(stream)
+        #print("----------------------------")
+        print(context.channel.name)
+        await asyncIterateThroughDict(authData.getStreamInfo(context.channel.name.lower()), print, functionIsAsync=False)
+        await context.send("worked")
 
     @commands.command(name="so")
-    @cooldown
+    #@cooldown
     async def shoutout(self, context):
         await context.send(f"{context.content}")
         message = context.content
         if len(message) > 4:
-            target = message[3:]
+            target = message[4:]
+            print(target)
             await context.send(f"Shoutout to {target}, who you might be able to find at https://twitch.tv/{target}!")
+            await context.send("Also, blame the helix api for no last game checking")
 
     @commands.command(name="Discord")
-    @cooldown
+    #@cooldown
     async def discord(self, context):
         await context.send("It seems that you are interested in our Discord server. You can join over here: discord.gg/3a4ZseU")
 
     @commands.command(name="DestinyJoin")
-    @cooldown
+    #@cooldown
     async def destinyJoin(self, context):
         await context.send("If you want to join me with your guardian (and my fireteam settings are on public), you can use this joincode: 76561198078422715")
 
     @commands.command(name="TownOfSalem")
-    @cooldown
+    #@cooldown
     async def townOfSalem(self, context):
         await context.send("Add me on Town of Salem: MrEvilInSalem")
 
     @commands.command(name="clear")
     async def clear(self, context):
-        await context.channel.clear()
-
-def check_user(name):
-    # Example from twitch docs on how to get user info using userid
-    """
-    curl -X GET 'https://api.twitch.tv/helix/users?id=141981764'
-    -H 'Authorization: Bearer cfabdegwdoklmawdzdo98xt2fo512y'
-    -H 'Client-Id: uo6dggojyb8d6soh92zknwmi5ej1q2'
-    """
-    headers = {
-        'Authorization' : data.OAUTH_TOKEN,
-        'Client-Id' : data.CLIENT_ID
-    }
-    uid = None # get the user id coresponding to the name
-    link = 'https://api.twitch.tv/helix/users?id='
-    response =  requests.get(link+uid, headers=headers)
-    del response
+        if context.user.is_mod:
+            await context.channel.clear()
 
 if __name__ == "__main__":
     bot = Bot()
