@@ -127,6 +127,17 @@ class Bot(commands.Bot):
             await context.send(f"Shoutout to {target}, who you might be able to find at https://twitch.tv/{target}!")
             await context.send("Also, blame the helix api for no last game checking")
 
+    @commands.command(name="uptime")
+    #@cooldown
+    async def uptime(self, context):
+        streamName = context.channel.name
+        streamInfo = authData.getStreamInfo(streamName.lower())
+        offlineData = {'data': [], 'pagination': {}}
+        if streamInfo == offlineData:
+            context.send('OI, the stream is offline, there is no uptime to be found')
+        else:
+            context.send(f'The stream started at {streamInfo["data"][0]["started_at"]}')
+
     @commands.command(name="Discord")
     #@cooldown
     async def discord(self, context):
