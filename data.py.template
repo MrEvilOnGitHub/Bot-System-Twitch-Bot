@@ -4,6 +4,8 @@ BOT_NICK = 'Bot name'
 BOT_PREFIX = 'Prefix'
 CHANNELS = ['Channels']
 
+offlineData = {'data': [], 'pagination': {}}
+
 def getStreamInfo(stream="your channel name in lower case") -> dict:
     """Optional argument:
     - stream: channel name of the twitch stream you want to pull data from
