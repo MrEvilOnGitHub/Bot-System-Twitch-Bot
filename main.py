@@ -83,13 +83,6 @@ def sendMessageToChannel(channel: str, message: str):
     loop = asyncio.get_event_loop()
     loop.create_task(Bot.get_channel(channel).send(message))
 
-async def sendRepeatedMessage(channel=Bot.get_channel("MrEvilOnTwitch"),
-                        message: str, delay=120,
-                        loop=asyncio.get_event_loop()):
-    await asyncio.sleep(delay)
-    channel.send(message)
-    loop.create_task(sendRepeatedMessage(channel, message, delay, loop))
-
 
 class api:
     """
@@ -99,7 +92,7 @@ class api:
     apiURL = "http://localhost:5000/api/alpha/"
 
     def interact(service, action="get", data=None):
-        if action is not "get" or "set":
+        if action != "get" or action != "set":
             raise TypeError(message="action must be get or set")
         try:
             r = requests.get(apiURL+service, headers=data)
@@ -108,13 +101,16 @@ class api:
         return r
 
     def receiveBannedWordList(self):
-        request = self.interact("bannedWords")
-        if request is None:
-            return
-        if request.status_code != 200:
-            return
-        data = request.json()
-        returner = tuple(data)
+        try:
+            request = self.interact("bannedWords")
+            if request is None:
+                return
+            if request.status_code != 200:
+                return
+            data = request.json()
+            returner = tuple(data)
+        except:
+            returner = tuple
         return returner
 
 
@@ -138,11 +134,21 @@ class Bot(commands.Bot):
                          nick=generalData.BOT_NICK,
                          prefix=generalData.BOT_PREFIX,
                          initial_channels=generalData.CHANNELS)
-        self.bannedWords = receiveBannedWordList()
+        # self.bannedWords = receiveBannedWordList()
+
+    async def sendRepeatedMessage(self,
+                                  channel="MrEvilOnTwitch",
+                                  message=str, delay=120,
+                                  loop=asyncio.get_event_loop()):
+        channel_obj = self.get_channel(channel)
+        await asyncio.sleep(delay)
+        # if generalData.getStreamInfo(channel) != generalData.offlineData:
+        await channel_obj.send(message)
+        loop.create_task(self.sendRepeatedMessage(channel=channel, message=message, delay=delay, loop=loop))
 
     async def event_ready(self):
         print(f'Bot ready | {self.nick}')
-        await sendRepeatedMessage("MrEvilOnTwitch", messages.commands, delay=300)
+        await self.sendRepeatedMessage("MrEvilOnTwitch", messages.commands, delay=30)
 
     async def event_message(self, message):
         # remove messages with blacklisted words first, then execute the command if it isn't removed
