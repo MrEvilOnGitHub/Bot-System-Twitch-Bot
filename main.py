@@ -142,8 +142,8 @@ class Bot(commands.Bot):
                                   loop=asyncio.get_event_loop()):
         channel_obj = self.get_channel(channel)
         await asyncio.sleep(delay)
-        # if generalData.getStreamInfo(channel) != generalData.offlineData:
-        await channel_obj.send(message)
+        if generalData.getStreamInfo(channel) != generalData.offlineData:
+            await channel_obj.send(message)
         loop.create_task(self.sendRepeatedMessage(channel=channel, message=message, delay=delay, loop=loop))
 
     async def event_ready(self):
