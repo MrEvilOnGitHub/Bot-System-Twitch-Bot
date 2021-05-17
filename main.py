@@ -249,6 +249,13 @@ class Bot(commands.Bot):
             except TwitchIOBException:
                 await context.send("The bot is not a mod on this channel. Unable to use the clear command")
 
+    @commands.command(name="lurk")
+    async def lurk(self, context):
+        await context.send(f"{context.author} has decided to lurk in the shadows, taking care of their own business")
+
+    @commands.command(name="unlurk")
+    async def unlurk(self, context):
+        await context.send(f"{context.author} has returned. What will they do now?")
 
 if __name__ == "__main__":
     bot = Bot()
