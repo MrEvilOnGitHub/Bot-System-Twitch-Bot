@@ -7,59 +7,13 @@ import requests
 import threading
 import types
 import inspect
+import json
 
 # import the data.py file storing all the tokens and other neccessary info
 import data as generalData
+from usefulStuff import collector
 
 import const_messages as messages
-
-def cooldown(function, duration=int(30)):
-    """
-    Cooldown decorator for command functions
-
-    Optional argument: duration = integer
-
-    How it works
-        Launches a timing thread utilizing sleep when the command is called.
-        And until that thread finishes the internal on_cooldown variable
-        will prevent another call of the function
-    """
-    function.on_cooldown = False
-
-    def sleeper():
-        function.on_cooldown = True
-        time.sleep(duration)
-        function.on_cooldown = False
-
-    async def wrapper(*args, **kwargs):
-        if function.on_cooldown:
-            print(f"Function {function.__name__} on cooldown")
-        else:
-            timer = threading.Thread(target=sleeper)
-            await function(*args, **kwargs)
-            timer.start()
-    return wrapper
-
-
-def iterateThroughDict(dictionary, funtionToExecute):
-    for key in dictionary:
-        if type(dictionary[key]) is dict:
-            iterateThroughDict(dictionary[key], funtionToExecute)
-        else:
-            funtionToExecute((key, dictionary[key]))
-
-
-async def asyncIterateThroughDict(dictionary,
-                                  asyncFunction,
-                                  functionIsAsync=True):
-    for key in dictionary:
-        if type(dictionary[key]) is dict:
-            await asyncIterateThroughDict(dictionary[key], asyncFunction, functionIsAsync=functionIsAsync)
-        else:
-            if functionIsAsync:
-                await asyncFunction((key, dictionary[key]))
-            else:
-                asyncFunction((key, dictionary))
 
 # Could be useful:
 #
@@ -169,28 +123,28 @@ class Bot(commands.Bot):
             apiData["streak"] = data.streak_months
         else:
             apiData["streak"] = 0
+        apiData["name"] = data.user.name
+        apiData["id"] = data.user.id
+        apiData["channel"] = data.channel.name
         if data.streak_months != 0:
             await data.channel.send(f'{data.user.name} has extended their sub-streak on tier {apiData["tier"]} by one month. It\'s now at {data.streak_months} months!')
         else:
             await data.channel.send(f'{data.user.name} has just subscribed on tier {apiData["tier"]}')
 
-    @commands.command(name="test")
-    @cooldown
-    async def test(self, context):
-        await context.send(f'Hello {context.author.name}')
-
     @commands.command(name="streamdata")
-    @cooldown
+    @collector.cooldown
     async def streamdata(self, context):
         """
-        Grabs the publicly available information of the stream chat is has been called from and prints it to console output
+        Prints public information of given streamname to console
         """
         print(context.channel.name)
-        await asyncIterateThroughDict(generalData.getStreamInfo(context.channel.name.lower()), print, functionIsAsync=False)
+        await collector.asyncIterateThroughDict(
+            generalData.getStreamInfo(context.channel.name.lower()),
+            print, functionIsAsync=False)
         await context.send("worked")
 
     @commands.command(name="so")
-    @cooldown
+    @collector.cooldown
     async def shoutout(self, context):
         message = context.content
         if len(message) > 4:
@@ -204,16 +158,8 @@ class Bot(commands.Bot):
         else:
             await context.send(f"{target} is currently offline, but you might find them here: twitch.tv/{target}")
 
-    @commands.command(name="help")
-    @cooldown
-    async def help(self, context):
-        if context.channel.name == "mrevilontwitch":
-            await context.send("This bot is selfmade and open-source. The commands can be found in the info tabs")
-        else:
-            await context.send("This bot has been made by twitch.tv/MrEvilOnTwitch. The commands are available in his info tabs")
-
     @commands.command(name="uptime")
-    @cooldown
+    @collector.cooldown
     async def uptime(self, context):
         streamName = context.channel.name
         streamInfo = generalData.getStreamInfo(streamName.lower())
@@ -223,24 +169,6 @@ class Bot(commands.Bot):
         else:
             await context.send(f'The stream started at {streamInfo["data"][0]["started_at"]}')
 
-    @commands.command(name="discord")
-    @cooldown
-    async def discord(self, context):
-        if context.channel.name == "mrevilontwitch":
-            await context.send("It seems that you are interested in our Discord server. You can join over here: discord.gg/3a4ZseU")
-
-    @commands.command(name="destiny")
-    @cooldown
-    async def destinyJoin(self, context):
-        if context.channel.name == "mrevilontwitch":
-            await context.send("If you want to join me with your guardian (and my fireteam settings are on public), you can use this joincode: 76561198078422715")
-
-    @commands.command(name="town")
-    @cooldown
-    async def townOfSalem(self, context):
-        if context.channel.name == "mrevilontwitch":
-            await context.send("Add me on Town of Salem: MrEvilInSalem")
-
     @commands.command(name="clear")
     async def clear(self, context):
         if context.user.is_mod:
@@ -249,14 +177,13 @@ class Bot(commands.Bot):
             except TwitchIOBException:
                 await context.send("The bot is not a mod on this channel. Unable to use the clear command")
 
-    @commands.command(name="lurk")
-    async def lurk(self, context):
-        await context.send(f"{context.author} has decided to lurk in the shadows, taking care of their own business")
+    @commands.command(name="reload")
+    async def reloadModule(self, context):
+        pass
 
-    @commands.command(name="unlurk")
-    async def unlurk(self, context):
-        await context.send(f"{context.author} has returned. What will they do now?")
 
 if __name__ == "__main__":
     bot = Bot()
+    bot.load_module("cogs.oneliners")
+    bot.load_module("cogs.raffle")
     bot.run()
