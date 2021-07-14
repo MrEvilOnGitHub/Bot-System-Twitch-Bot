@@ -31,13 +31,6 @@ import const_messages as messages
 # loop = asyncio.get_event_loop()
 # loop.create_task(chan.send("Send this message"))
 
-def sendMessageToChannel(channel: str, message: str):
-    for i in authDetails.CHANNELS:
-        if i.lower() == channel.lower():
-            raise ValueError
-    loop = asyncio.get_event_loop()
-    loop.create_task(Bot.get_channel(channel).send(message))
-
 
 class Bot(commands.Bot):
 
@@ -48,24 +41,8 @@ class Bot(commands.Bot):
                          prefix=authDetails.BOT_PREFIX,
                          initial_channels=authDetails.CHANNELS)
 
-    async def sendRepeatedMessage(self,
-                                  channel="MrEvilOnTwitch",
-                                  message=str, delay=120,
-                                  loop=asyncio.get_event_loop()):
-        channel_obj = self.get_channel(channel)
-        await asyncio.sleep(delay)
-        if collector.getStreamInfo(channel) != collector.offlineData:
-            await channel_obj.send(message)
-        loop.create_task(self.sendRepeatedMessage(channel=channel, message=message, delay=delay, loop=loop))
-
     async def event_ready(self):
         print(f'Bot ready | {self.nick}')
-        await self.sendRepeatedMessage("MrEvilOnTwitch", messages.commands, delay=30)
-
-#    async def event_message(self, message):
-#        # remove messages with blacklisted words first, then execute the command if it isn't removed
-#        # ^ yet to be implemented
-#        await self.handle_commands(message)
 
     async def event_usernotice_subscription(self, data):
         apiData = {}
