@@ -1,5 +1,4 @@
-__pycache__
-.vscode/launch.json
-.vscode/.ropeproject/config.py
-.vscode/.ropeproject/objectdb
+__pycache__/
+.vscode/
+.mypy_cache/
 authDetails.py
