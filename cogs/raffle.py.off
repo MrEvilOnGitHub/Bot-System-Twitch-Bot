@@ -1,0 +1,45 @@
+from twitchio.ext import commands
+from twitchio import dataclasses
+
+from usefulStuff import collector
+
+@commands.cog()
+class raffles:
+    def __init__(self, bot):
+        self.bot = bot
+
+    _req = ()
+    _opt = ("time", "min", "max")
+    _activeRaffle = False
+
+    def _addRaffle(self, args = {"time": 5, "min": 0, "max": 0}):
+        async def timer():
+            pass
+        self._participants = []
+
+
+    @commands.command(name="raffle_new")
+    async def raffle_new(self, context: dataclasses.Context):
+        if self._activeRaffle:
+            await context.send("There's already a raffle active. Try again later")
+            return
+        tokens = context.message.content.split()
+        args = {"time": 5, "min": 0, "max": 0}
+        for i in tokens[1:]:
+            tmp = i.split("=")
+            if len(tmp) == 2 and tmp[0] in self._opt:
+                # ignore invalid arguments
+                args[tmp[0]] = tmp[1]
+
+        self._addRaffle(args=args)
+        await context.send(f"A new raffle has been created! Time to enter: {args['time']}")
+        await context.send("Use the command raffle_join to enter")
+
+    @commands.command(name="raffle_join")
+    async def raffle_join(self, context: dataclasses.Context):
+        if not self._activeRaffle:
+            await context.send("No raffle active right now")
+            return
+        if not context.author.id in self._participants:
+            self._participants.append(context.author.id)
+            await

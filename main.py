@@ -8,9 +8,10 @@ import threading
 import types
 import inspect
 import json
+import os
 
 # import the data.py file storing all the tokens and other neccessary info
-import data as generalData
+import authDetails
 from usefulStuff import collector
 
 import const_messages as messages
@@ -31,7 +32,7 @@ import const_messages as messages
 # loop.create_task(chan.send("Send this message"))
 
 def sendMessageToChannel(channel: str, message: str):
-    for i in generalData.CHANNELS:
+    for i in authDetails.CHANNELS:
         if i.lower() == channel.lower():
             raise ValueError
     loop = asyncio.get_event_loop()
@@ -83,11 +84,11 @@ class Bot(commands.Bot):
     bannedWords = tuple
 
     def __init__(self):
-        super().__init__(irc_token=generalData.OAUTH_TOKEN,
-                         client_id=generalData.CLIENT_ID,
-                         nick=generalData.BOT_NICK,
-                         prefix=generalData.BOT_PREFIX,
-                         initial_channels=generalData.CHANNELS)
+        super().__init__(irc_token=authDetails.OAUTH_TOKEN,
+                         client_id=authDetails.CLIENT_ID,
+                         nick=authDetails.BOT_NICK,
+                         prefix=authDetails.BOT_PREFIX,
+                         initial_channels=authDetails.CHANNELS)
         # self.bannedWords = receiveBannedWordList()
 
     async def sendRepeatedMessage(self,
@@ -96,7 +97,7 @@ class Bot(commands.Bot):
                                   loop=asyncio.get_event_loop()):
         channel_obj = self.get_channel(channel)
         await asyncio.sleep(delay)
-        if generalData.getStreamInfo(channel) != generalData.offlineData:
+        if collector.getStreamInfo(channel) != collector.offlineData:
             await channel_obj.send(message)
         loop.create_task(self.sendRepeatedMessage(channel=channel, message=message, delay=delay, loop=loop))
 
@@ -104,10 +105,10 @@ class Bot(commands.Bot):
         print(f'Bot ready | {self.nick}')
         await self.sendRepeatedMessage("MrEvilOnTwitch", messages.commands, delay=30)
 
-    async def event_message(self, message):
-        # remove messages with blacklisted words first, then execute the command if it isn't removed
-        # ^ yet to be implemented
-        await self.handle_commands(message)
+#    async def event_message(self, message):
+#        # remove messages with blacklisted words first, then execute the command if it isn't removed
+#        # ^ yet to be implemented
+#        await self.handle_commands(message)
 
     async def event_usernotice_subscription(self, data):
         apiData = {}
@@ -131,59 +132,8 @@ class Bot(commands.Bot):
         else:
             await data.channel.send(f'{data.user.name} has just subscribed on tier {apiData["tier"]}')
 
-    @commands.command(name="streamdata")
-    @collector.cooldown
-    async def streamdata(self, context):
-        """
-        Prints public information of given streamname to console
-        """
-        print(context.channel.name)
-        await collector.asyncIterateThroughDict(
-            generalData.getStreamInfo(context.channel.name.lower()),
-            print, functionIsAsync=False)
-        await context.send("worked")
-
-    @commands.command(name="so")
-    @collector.cooldown
-    async def shoutout(self, context):
-        message = context.content
-        if len(message) > 4:
-            target = message[len(generalData.BOT_PREFIX)+3:]
-        else:
-            target = "irepptar"
-        stream = generalData.getStreamInfo(target)
-        if stream != generalData.offlineData:
-            string = f'{target} is currently live playing {stream["data"][0]["game_name"]}. Check them out here: twitch.tv/{target}'
-            await context.send(string)
-        else:
-            await context.send(f"{target} is currently offline, but you might find them here: twitch.tv/{target}")
-
-    @commands.command(name="uptime")
-    @collector.cooldown
-    async def uptime(self, context):
-        streamName = context.channel.name
-        streamInfo = generalData.getStreamInfo(streamName.lower())
-        offlineData = {'data': [], 'pagination': {}}
-        if streamInfo == offlineData:
-            await context.send('OI, the stream is offline, there is no uptime to be found')
-        else:
-            await context.send(f'The stream started at {streamInfo["data"][0]["started_at"]}')
-
-    @commands.command(name="clear")
-    async def clear(self, context):
-        if context.user.is_mod:
-            try:
-                await context.channel.clear()
-            except TwitchIOBException:
-                await context.send("The bot is not a mod on this channel. Unable to use the clear command")
-
-    @commands.command(name="reload")
-    async def reloadModule(self, context):
-        pass
-
-
 if __name__ == "__main__":
     bot = Bot()
-    bot.load_module("cogs.oneliners")
-    bot.load_module("cogs.raffle")
+    for i in [j[:-3] for j in os.listdir("./cogs") if j[-2:] == "py"]:
+        bot.load_module("cogs." + i)
     bot.run()
