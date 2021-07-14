@@ -6,6 +6,9 @@ from usefulStuff import collector
 
 @commands.cog()
 class infos:
+    def __init__(self, bot):
+        self.bot = bot
+
     @commands.command(name="time")
     @collector.cooldown
     async def localtime(self, context: dataclasses.Context):
@@ -49,3 +52,11 @@ class infos:
             generalData.getStreamInfo(context.channel.name.lower()),
             print, functionIsAsync=False)
         await context.send("worked")
+
+    @commands.command(name="botInfo")
+    @collector.cooldown
+    async def botinfo(self, context: dataclasses.Context):
+        if context.channel.name.lower() != "mrevilontwitch":
+            await context.send("This bot has been made by MrEvil. The source-code can be found here: https://github.com/MrEvilOnGitHub/Bot-System-Twitch-Bot")
+            return
+        await context.send("This bot is selfmade. If you want to take a look at the source-code, go to: https://github.com/MrEvilOnGitHub/Bot-System-Twitch-Bot")
