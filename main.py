@@ -39,49 +39,7 @@ def sendMessageToChannel(channel: str, message: str):
     loop.create_task(Bot.get_channel(channel).send(message))
 
 
-class api:
-    """
-    Wrapper class for interacting with the localy hosted web-API
-    """
-
-    apiURL = "http://localhost:5000/api/alpha/"
-
-    def interact(service, action="get", data=None):
-        if action != "get" or action != "set":
-            raise TypeError(message="action must be get or set")
-        try:
-            r = requests.get(apiURL+service, headers=data)
-        except requests.exceptions.ConnectionError:
-            return None
-        return r
-
-    def receiveBannedWordList(self):
-        try:
-            request = self.interact("bannedWords")
-            if request is None:
-                return
-            if request.status_code != 200:
-                return
-            data = request.json()
-            returner = tuple(data)
-        except:
-            returner = tuple
-        return returner
-
-
-def receiveBannedWordList():
-    request = requests.get(api.apiURL+"bannedWords")
-    if request is None:
-        return
-    if request.status_code != 200:
-        return
-    data = request.json()
-    returner = tuple(data)
-    return returner
-
 class Bot(commands.Bot):
-
-    bannedWords = tuple
 
     def __init__(self):
         super().__init__(irc_token=authDetails.OAUTH_TOKEN,
@@ -89,7 +47,6 @@ class Bot(commands.Bot):
                          nick=authDetails.BOT_NICK,
                          prefix=authDetails.BOT_PREFIX,
                          initial_channels=authDetails.CHANNELS)
-        # self.bannedWords = receiveBannedWordList()
 
     async def sendRepeatedMessage(self,
                                   channel="MrEvilOnTwitch",
