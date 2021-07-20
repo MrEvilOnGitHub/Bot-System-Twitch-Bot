@@ -1,6 +1,5 @@
 import threading
 import time
-from requests import get
 
 class collector:
 
@@ -53,18 +52,3 @@ class collector:
                     await asyncFunction((key, dictionary[key]))
                 else:
                     asyncFunction((key, dictionary))
-
-    def getStreamInfo(stream="mrevilontwitch") -> dict:
-        """Optional argument:
-        - stream: channel name of the twitch stream you want to pull data from
-
-        returns:
-        - Set of the json-formated data received from the twitch api endpoint used (helix)
-        """
-        url = f"https://api.twitch.tv/helix/streams?user_login={stream}"
-        data = {
-            "Client-Id": "YourClientID",
-            "Authorization": "YourBearerToken"
-            }
-        r = get(url, headers=data)
-        return r.json()

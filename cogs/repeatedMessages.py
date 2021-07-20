@@ -25,3 +25,7 @@ class repeats:
         for i in self.messages:
             await self.sendRepeatedMessage(message=i["message"],
                                            delay=i["delay"])
+
+    @commands.command(name="rm")
+    async def rm(self, context):
+        raise NotImplementedError
